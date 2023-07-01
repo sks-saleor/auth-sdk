@@ -52,7 +52,6 @@ export class SaleorAuthClient {
   private runAuthorizedRequest: Fetch = (input, init) => {
     // technically we run this only when token is there
     // but just to make typescript happy
-    console.log("this.accessToken::: ", this.accessToken);
     if (!this.accessToken) {
       return fetch(input, init);
     }
@@ -157,23 +156,15 @@ export class SaleorAuthClient {
     if (!this.accessToken) {
       this.accessToken = this.storage.getItem("token");
     }
-    console.log("this.accessToken::: ");
-    try {
-      console.log("this.isExpiredToken::: ", isExpiredToken(this.accessToken || ""));
-    } catch (error) {
-      console.log(error);
-    }
-
-    console.log("this.accessToken:::2");
     // access token is fine, add it to the request and proceed
     if (this.accessToken && !isExpiredToken(this.accessToken)) {
       return this.runAuthorizedRequest(input, init);
     }
 
     // refresh token exists, try to authenticate if possible
-    // if (refreshToken) {
-    //   return this.handleRequestWithTokenRefresh(input, init);
-    // }
+    if (refreshToken) {
+      return this.handleRequestWithTokenRefresh(input, init);
+    }
 
     // any regular mutation, no previous sign in, proceed
     return fetch(input, init);
