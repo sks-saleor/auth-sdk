@@ -2,6 +2,8 @@ import { print } from "graphql/language/printer.js";
 import gql from "graphql-tag";
 import type { DocumentNode } from "graphql";
 
+global.Buffer = global.Buffer || require("buffer").Buffer;
+
 const MILLI_MULTIPLYER = 1000;
 const TOKEN_GRACE_PERIOD = 2000;
 

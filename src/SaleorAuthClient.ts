@@ -12,7 +12,6 @@ import {
 } from "./types";
 import { invariant } from "./utils";
 import { CHECKOUT_CUSTOMER_DETACH, PASSWORD_RESET, TOKEN_CREATE, TOKEN_REFRESH } from "./mutations";
-import cookie from "cookie";
 
 export interface SaleorAuthClientProps {
   onAuthRefresh?: (isAuthenticating: boolean) => void;
@@ -26,6 +25,7 @@ export class SaleorAuthClient {
   private onAuthRefresh?: (isAuthenticating: boolean) => void;
   private saleorApiUrl: string;
   private storageHandler: SaleorAuthStorageHandler | null;
+  storage: Storage;
   /**
    * Use ths method to clear event listeners from storageHandler
    *  @example
@@ -42,6 +42,7 @@ export class SaleorAuthClient {
     this.storageHandler = storage ? new SaleorAuthStorageHandler(storage, saleorApiUrl) : null;
     this.onAuthRefresh = onAuthRefresh;
     this.saleorApiUrl = saleorApiUrl;
+    this.storage = storage as Storage;
   }
 
   cleanup = () => {
@@ -51,6 +52,7 @@ export class SaleorAuthClient {
   private runAuthorizedRequest: Fetch = (input, init) => {
     // technically we run this only when token is there
     // but just to make typescript happy
+    console.log("this.accessToken::: ", this.accessToken);
     if (!this.accessToken) {
       return fetch(input, init);
     }
@@ -104,6 +106,7 @@ export class SaleorAuthClient {
       this.storageHandler?.setAuthState("signedIn");
       this.accessToken = token;
       this.tokenRefreshPromise = null;
+      this.storage.setItem("token", token.toString());
       return this.runAuthorizedRequest(input, init);
     }
 
@@ -138,6 +141,7 @@ export class SaleorAuthClient {
 
     if (token) {
       this.accessToken = token;
+      this.storage.setItem("token", token.toString());
     }
 
     if (refreshToken) {
@@ -150,21 +154,26 @@ export class SaleorAuthClient {
 
   fetchWithAuth: Fetch = async (input, init) => {
     const refreshToken = this.storageHandler?.getRefreshToken();
-
     if (!this.accessToken) {
-      this.accessToken = cookie.parse(document.cookie).token;
-      document.cookie = cookie.serialize("token", "", { expires: new Date(0), path: "/" });
+      this.accessToken = this.storage.getItem("token");
+    }
+    console.log("this.accessToken::: ");
+    try {
+      console.log("this.isExpiredToken::: ", isExpiredToken(this.accessToken || ""));
+    } catch (error) {
+      console.log(error);
     }
 
+    console.log("this.accessToken:::2");
     // access token is fine, add it to the request and proceed
     if (this.accessToken && !isExpiredToken(this.accessToken)) {
       return this.runAuthorizedRequest(input, init);
     }
 
     // refresh token exists, try to authenticate if possible
-    if (refreshToken) {
-      return this.handleRequestWithTokenRefresh(input, init);
-    }
+    // if (refreshToken) {
+    //   return this.handleRequestWithTokenRefresh(input, init);
+    // }
 
     // any regular mutation, no previous sign in, proceed
     return fetch(input, init);
@@ -185,7 +194,7 @@ export class SaleorAuthClient {
   signOut = () => {
     this.accessToken = null;
     this.storageHandler?.clearAuthStorage();
-    document.cookie = cookie.serialize("token", "", { expires: new Date(0), path: "/" });
+    this.storage.removeItem("token");
   };
 
   checkoutSignOut = async (variables: CustomerDetachVariables) => {
