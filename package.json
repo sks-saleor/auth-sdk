@@ -2,8 +2,8 @@
   "name": "@saleor/auth-sdk",
   "version": "1.0.0",
   "description": "Auth SDK for Saleor",
-  "types": "index.d.ts",
-  "main": "index.js",
+  "types": "./src/index.ts",
+  "main": "./src/index.ts",
   "scripts": {
     "prepublishOnly": "pnpm build",
     "prebuild": "pnpm clean",
