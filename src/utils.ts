@@ -5,18 +5,6 @@ import type { DocumentNode } from "graphql";
 const MILLI_MULTIPLYER = 1000;
 const TOKEN_GRACE_PERIOD = 2000;
 
-type TokenData = {
-  iat: number;
-  owner: string;
-  iss: string;
-  exp: number;
-  token: string;
-  email: string;
-  type: "access" | "refresh";
-  user_id: string;
-  is_staff: boolean;
-};
-
 const decodeToken = (token: string): { exp: number; iss: string } => {
   const tokenParts = token.split(".");
   const decodedTokenData = Buffer.from(tokenParts[1] || "", "base64").toString();

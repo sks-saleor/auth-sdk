@@ -12,7 +12,7 @@ export interface UseSaleorAuthClient {
  */
 export const useSaleorAuthClient = ({
   saleorApiUrl,
-  storage = typeof window !== "undefined" ? window.localStorage : undefined,
+  storage = undefined,
   onAuthRefresh,
 }: SaleorAuthClientProps): UseSaleorAuthClient => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);

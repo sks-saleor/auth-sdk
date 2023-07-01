@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { SaleorAuthEvent, getStorageAuthEventKey } from "../SaleorAuthStorageHandler";
+import pubsub from "../pubsub";
 
 interface UseAuthChangeProps {
   saleorApiUrl: string;
@@ -27,21 +28,11 @@ export const useAuthChange = ({ saleorApiUrl, onSignedOut, onSignedIn }: UseAuth
   };
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    // for current window
-    window.addEventListener(
-      getStorageAuthEventKey(saleorApiUrl),
-      handleAuthChange as EventListener,
-    );
+    // for current pubsub
+    const subsciption = pubsub.addListener(getStorageAuthEventKey(saleorApiUrl), handleAuthChange);
 
     return () => {
-      window.removeEventListener(
-        getStorageAuthEventKey(saleorApiUrl),
-        handleAuthChange as EventListener,
-      );
+      subsciption?.remove();
     };
   }, []);
 };

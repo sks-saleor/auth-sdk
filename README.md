@@ -15,17 +15,10 @@
 
 ## Usage
 
-### Next.js (Pages Router) with [Apollo Client](https://www.apollographql.com/docs/react/)
-
 <details>
   <summary>Step-by-step video tutorial</summary>
 
-Check the following [step-by-step video](https://www.youtube.com/watch?v=t6nxBk7JHCw) guide on how to set this up.
-[![Saleor Auth with Next.js](https://img.youtube.com/vi/t6nxBk7JHCw/0.jpg)](https://www.youtube.com/watch?v=t6nxBk7JHCw)
-
 </details>
-
-When using Next.js (Pages Router) along with [Apollo Client](https://www.apollographql.com/docs/react/), there are two essential steps to setting up your application. First, you have to surround your application's root with two providers: `<SaleorAuthProvider>` and `<ApolloProvider>`.
 
 `<SaleorAuthProvider>` comes from our React.js-auth package, located at `@saleor/auth-sdk/react`, and it needs to be set up with the output of `useSaleorAuthClient`.
 
@@ -36,7 +29,6 @@ Lastly, you must run the `useAuthChange` hook. This links the `onSignedOut` and 
 Let's look at an example:
 
 ```tsx
-import { AppProps } from "next/app";
 import { ApolloProvider } from "@apollo/client";
 
 import { SaleorAuthProvider, useAuthChange, useSaleorAuthClient } from "@saleor/auth-sdk/react";
@@ -81,57 +73,39 @@ const response = await signIn({
 });
 ```
 
-### Next.js (Pages Router) with [urql](https://formidable.com/open-source/urql/)
-
-When using Next.js (Pages Router) along with [urql](https://formidable.com/open-source/urql/) client, there are two essential steps to setting up your application. First, you have to surround your application's root with two providers: `<SaleorAuthProvider>` and `<Provider>`.
-
-`<SaleorAuthProvider>` comes from our React.js-auth package, located at `@saleor/auth-sdk/react`, and it needs to be set up with the output of `useSaleorAuthClient`.
-
-The `<Provider>` comes from `urql` and it needs the GraphQL client instance, which is enhanced with the authenticated `fetch`. This `fetch` is also an output of `useSaleorAuthClient` and available as `fetchWithAuth`.
-
-Lastly, you must run the `useAuthChange` hook. This links the `onSignedOut` and `onSignedIn` events and is meant to refresh the GraphQL store and in-flight active GraphQL queries.
-
-Let's look at an example:
-
-```tsx
-import { AppProps } from "next/app";
-import { Provider, cacheExchange, fetchExchange, ssrExchange } from "urql";
-
-import { SaleorAuthProvider, useAuthChange, useSaleorAuthClient } from "@saleor/auth-sdk/react";
-import { useUrqlClient } from "@saleor/auth-sdk/react/urql";
-
 const SaleorURL = "<your Saleor API URL>";
 
 export default function App({ Component, pageProps }: AppProps) {
-  const useSaleorAuthClientProps = useSaleorAuthClient({
-    saleorApiUrl: SaleorURL,
-  });
+const useSaleorAuthClientProps = useSaleorAuthClient({
+saleorApiUrl: SaleorURL,
+});
 
-  const { urqlClient, reset, refetch } = useUrqlClient({
-    url: SaleorURL,
-    fetch: useSaleorAuthClientProps.saleorAuthClient.fetchWithAuth,
-    exchanges: [cacheExchange, fetchExchange],
-  });
+const { urqlClient, reset, refetch } = useUrqlClient({
+url: SaleorURL,
+fetch: useSaleorAuthClientProps.saleorAuthClient.fetchWithAuth,
+exchanges: [cacheExchange, fetchExchange],
+});
 
-  useAuthChange({
-    saleorApiUrl: SaleorURL,
-    onSignedOut: () => reset(),
-    onSignedIn: () => refetch(),
-  });
+useAuthChange({
+saleorApiUrl: SaleorURL,
+onSignedOut: () => reset(),
+onSignedIn: () => refetch(),
+});
 
-  return (
-    <SaleorAuthProvider {...useSaleorAuthClientProps}>
-      <Provider value={urqlClient}>// ... Your Application</Provider>
-    </SaleorAuthProvider>
-  );
+return (
+<SaleorAuthProvider {...useSaleorAuthClientProps}>
+<Provider value={urqlClient}>// ... Your Application</Provider>
+</SaleorAuthProvider>
+);
 }
-```
+
+````
 
 Then, in your register, login and logout forms you can use the auth methods (`signIn`, `signOut`, `isAuthenticatin`) provided by the `useSaleorAuthContext()`. For example, `signIn` is usually triggered when submitting the login form credentials.
 
 ```ts
 const { signIn, signOut, isAuthenticating } = useSaleorAuthContext();
-```
+````
 
 ```ts
 const response = await signIn({
@@ -140,68 +114,10 @@ const response = await signIn({
 });
 ```
 
-### Next.js (Pages Router) with OpenID Connect
-
-Setup `_app.tsx` as described above. In your login component trigger the external auth flow using the following code:
-
-```tsx
-import { useSaleorAuthContext, useSaleorExternalAuth } from "@saleor/auth-sdk/react";
-import { ExternalProvider } from "@saleor/auth-sdk";
-import Link from "next/link";
-import { gql, useQuery } from "@apollo/client";
-
-export default function Home() {
-  const {
-    loading: isLoadingCurrentUser,
-    error,
-    data,
-  } = useQuery(
-    gql`
-      query CurrentUser {
-        me {
-          id
-          email
-          firstName
-          lastName
-        }
-      }
-    `,
-  );
-  const { authURL, loading: isLoadingExternalAuth } = useSaleorExternalAuth({
-    saleorURL: "<your Saleor instance>",
-    provider: ExternalProvider.OpenIDConnect,
-    redirectURL: "<your Next.js app>/api/auth/callback",
-  });
-
-  const { signOut } = useSaleorAuthContext();
-
-  if (isLoadingExternalAuth || isLoadingCurrentUser) {
-    return <div>Loading...</div>;
-  }
-  if (data?.me) {
-    return (
-      <div>
-        {JSON.stringify(data)}
-        <button onClick={() => signOut()}>Logout</button>
-      </div>
-    );
-  }
-  if (authURL) {
-    return (
-      <div>
-        <Link href={authURL}>Login</Link>
-      </div>
-    );
-  }
-  return <div>Something went wrong</div>;
-}
-```
-
 You also need to define the auth callback. In `pages/api/auth` create the `callback.ts` with the following content:
 
 ```ts
 import { ExternalProvider, SaleorExternalAuth } from "@saleor/auth-sdk";
-import { createSaleorExternalAuthHandler } from "@saleor/auth-sdk/next";
 
 const externalAuth = new SaleorExternalAuth(
   "<your Saleor instance URL>",

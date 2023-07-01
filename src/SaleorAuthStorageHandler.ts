@@ -1,4 +1,6 @@
 /* auth state when user signs in / out */
+import pubsub from "./pubsub";
+
 export const getStorageAuthEventKey = (prefix?: string) =>
   [prefix, "saleor_storage_auth_change"].filter(Boolean).join("+");
 export const getStorageAuthStateKey = (prefix?: string) =>
@@ -11,8 +13,9 @@ export type AuthState = "signedIn" | "signedOut";
 export type SaleorAuthEvent = CustomEvent<{ authState: AuthState }>;
 
 export class SaleorAuthStorageHandler {
+  sunscription: any;
   constructor(private storage: Storage, private prefix?: string) {
-    window.addEventListener("storage", this.handleStorageChange);
+    this.sunscription = pubsub.addListener("storage", this.handleStorageChange);
   }
 
   private handleStorageChange = (event: StorageEvent) => {
@@ -30,13 +33,12 @@ export class SaleorAuthStorageHandler {
   };
 
   cleanup = () => {
-    window.removeEventListener("storage", this.handleStorageChange);
+    this.sunscription?.remove();
   };
 
   /* auth state */
   sendAuthStateEvent = (authState: AuthState) => {
-    const event = new CustomEvent(getStorageAuthEventKey(this.prefix), { detail: { authState } });
-    window.dispatchEvent(event);
+    pubsub.emit(getStorageAuthEventKey(this.prefix), { detail: { authState } });
   };
 
   getAuthState = (): AuthState =>
