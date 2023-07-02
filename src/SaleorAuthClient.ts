@@ -94,12 +94,14 @@ export class SaleorAuthClient {
         },
       } = res;
 
-      this.onAuthRefresh?.(false);
       if (errors?.length || graphqlErrors?.length || !token) {
+        this.onAuthRefresh?.(false);
         this.tokenRefreshPromise = null;
         this.storageHandler?.clearAuthStorage();
         return fetch(input, init);
       }
+
+      this.onAuthRefresh?.(true);
 
       this.storageHandler?.setAuthState("signedIn");
       this.accessToken = token;
