@@ -2,3 +2,8 @@ export * from "./SaleorAuthClient";
 export * from "./SaleorExternalAuth";
 export * from "./types";
 export * from "./react";
+export * from "./next";
+export * from "./SaleorAuthStorageHandler";
+export * from "./mutations";
+export * from "./types";
+export * from "./utils";
