@@ -42,6 +42,8 @@ export class SaleorAuthClient {
     this.storageHandler = storage ? new SaleorAuthStorageHandler(storage, saleorApiUrl) : null;
     this.onAuthRefresh = onAuthRefresh;
     this.saleorApiUrl = saleorApiUrl;
+    (window as any).storageHandler = this.storageHandler;
+    (window as any).saleorAuthClient = this;
   }
 
   cleanup = () => {
