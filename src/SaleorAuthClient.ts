@@ -95,13 +95,13 @@ export class SaleorAuthClient {
       } = res;
 
       this.onAuthRefresh?.(false);
-
       if (errors?.length || graphqlErrors?.length || !token) {
         this.tokenRefreshPromise = null;
         this.storageHandler?.clearAuthStorage();
         return fetch(input, init);
       }
 
+      this.onAuthRefresh?.(true);
       this.storageHandler?.setAuthState("signedIn");
       this.accessToken = token;
       this.tokenRefreshPromise = null;
@@ -155,7 +155,12 @@ export class SaleorAuthClient {
     const refreshToken = this.storageHandler?.getRefreshToken();
     if (!this.accessToken) {
       this.accessToken = this.storage.getItem("token");
+      if (this.accessToken && isExpiredToken(this.accessToken)) {
+        this.accessToken = null;
+        this.storage.removeItem("token");
+      }
     }
+
     // access token is fine, add it to the request and proceed
     if (this.accessToken && !isExpiredToken(this.accessToken)) {
       return this.runAuthorizedRequest(input, init);
