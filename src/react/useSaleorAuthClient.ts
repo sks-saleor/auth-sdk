@@ -1,3 +1,4 @@
+import { isExpiredToken } from "./../utils";
 import { SaleorAuthClient, SaleorAuthClientProps } from "../SaleorAuthClient";
 import { useEffect, useMemo, useState } from "react";
 
@@ -15,7 +16,12 @@ export const useSaleorAuthClient = ({
   storage = undefined,
   onAuthRefresh,
 }: SaleorAuthClientProps): UseSaleorAuthClient => {
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const accessToken = storage?.getItem("token");
+  let isAuthenticated = false;
+  if (accessToken && !isExpiredToken(accessToken)) {
+    isAuthenticated = true;
+  }
+  const [isAuthenticating, setIsAuthenticating] = useState(isAuthenticated);
 
   const saleorAuthClient = useMemo(
     () =>

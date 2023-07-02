@@ -101,7 +101,6 @@ export class SaleorAuthClient {
         return fetch(input, init);
       }
 
-      this.onAuthRefresh?.(true);
       this.storageHandler?.setAuthState("signedIn");
       this.accessToken = token;
       this.tokenRefreshPromise = null;
